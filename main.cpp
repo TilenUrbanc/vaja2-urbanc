@@ -52,7 +52,28 @@ void binarniRadixSort(vector<unsigned char>& A) {
     }
 }
 
-int main() {
-    cout << "Test" << endl;
+
+int main(int argc, char* argv[]) {
+
+    if (argc < 2) {
+        cout << "Napaka pri argumentih\n";
+        return 1;
+    }
+
+    vector<unsigned char> A = preberiPodatke(argv[1]);
+
+    binarniRadixSort(A);
+
+    ofstream out("out.txt");
+
+    for (int i = 0; i < A.size(); i++) {
+        out << (int)A[i];
+        if (i != A.size() - 1) {
+            out << " ";
+        }
+    }
+
+    out.close();
+
     return 0;
 }
