@@ -25,7 +25,9 @@ vector<unsigned char> preberiPodatke(const char* pot) {
 
 
 void binarniRadixSort(vector<unsigned char>& A) {
-
+    if (A.empty()) {
+        return;
+    }
     int n = A.size();
 
     vector<unsigned char> B(n);
