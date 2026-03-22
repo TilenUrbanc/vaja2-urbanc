@@ -66,6 +66,10 @@ int main(int argc, char* argv[]) {
 
     ofstream out("out.txt");
 
+    if (A.empty()) {
+        cout << "Ni podatkov za zapis\n";
+    }
+
     for (int i = 0; i < A.size(); i++) {
         out << (int)A[i];
         if (i != A.size() - 1) {
