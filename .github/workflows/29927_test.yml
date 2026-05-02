@@ -1,6 +1,9 @@
-
+# Ime workflowa. To ime potem uporabi deploy skripta,
+# da ve, kdaj se je testiranje koncalo.
 name: 29927_test
 
+# Workflow se zazene vedno, ko naredimo push na main vejo.
+# workflow_dispatch pa pomeni, da ga lahko pozenemo tudi rocno na GitHub strani.
 on:
   push:
     branches:
@@ -8,14 +11,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Prvi job samo preveri, ce imamo testno skripto.
+  # Ce kaj ni vredu, napako zapise v napaka.txt.
   preveri_testne_skripte:
     name: Preveri testne skripte
     runs-on: self-hosted
 
     steps:
+      # Najprej si runner prenese kodo iz GitHub repozitorija.
       - name: Prevzemi kodo iz repozitorija
         uses: actions/checkout@v4
 
+      # Tukaj preverimo, ali datoteka test_radix.sh obstaja
+      # in ali ni prazna. Ce je napaka, jo zapisemo v napaka.txt.
       - name: Preveri, ali testna skripta obstaja
         run: |
           {
@@ -28,26 +36,34 @@ jobs:
             fi
           } 2> napaka.txt
 
+      # Tukaj samo izpisemo, kaj je v napaka.txt,
+      # da se na GitHubu lepo vidi, kaj se je zgodilo.
       - name: Izpisi vsebino napaka.txt
         run: |
           if [ -s napaka.txt ]; then
             echo "Najdene so bile napake:"
             cat napaka.txt
           else
-            echo "Datoteka napaka.txt je prazna. Prvi posel je uspesen."
+            echo "Datoteka napaka.txt je prazna. Prvi job je uspesen."
           fi
 
+      # Datoteko napaka.txt shranimo kot artefakt.
+      # Tako jo lahko drugi job prenese in preveri.
       - name: Shrani napaka.txt kot artefakt
         uses: actions/upload-artifact@v4
         with:
           name: napaka-testne-skripte
           path: napaka.txt
 
+  # Drugi job je odvisen od prvega.
+  # Najprej pogleda napaka.txt, potem pa prevede in testira program.
   zazeni_teste:
     name: Zazeni teste C++${{ matrix.cxx_standard }}
     needs: preveri_testne_skripte
     runs-on: self-hosted
 
+    # Matrix uporabimo zato, da isti test pozenemo v vec razlicnih okoljih.
+    # Tukaj testiramo C++17 in C++20.
     strategy:
       matrix:
         cxx_standard:
@@ -55,33 +71,41 @@ jobs:
           - 20
 
     steps:
+      # Tudi drugi job si mora prenesti kodo iz repozitorija.
       - name: Prevzemi kodo iz repozitorija
         uses: actions/checkout@v4
 
-      - name: Prenesi napaka.txt iz prvega posla
+      # Tukaj prenesemo napaka.txt, ki ga je pripravil prvi job.
+      - name: Prenesi napaka.txt iz prvega joba
         uses: actions/download-artifact@v4
         with:
           name: napaka-testne-skripte
           path: artefakt
 
-      - name: Preveri, ali je prvi posel nasel napako
+      # Ce napaka.txt ni prazna, potem nekaj ni vredu
+      # in se testiranje tukaj ustavi.
+      - name: Preveri, ali je prvi job nasel napako
         run: |
           if [ -s artefakt/napaka.txt ]; then
-            echo "Prvi posel je nasel napako:"
+            echo "Prvi job je nasel napako:"
             cat artefakt/napaka.txt
             exit 1
           fi
 
-          echo "Prvi posel ni nasel napak. Nadaljujem s testi."
+          echo "Prvi job ni nasel napak. Nadaljujem s testi."
 
+      # Preverimo, ce je g++ na runnerju dosegljiv.
       - name: Preveri C++ prevajalnik
         run: |
           g++ --version
 
+      # Testni skripti damo dovoljenje za zagon.
       - name: Dovoli zagon testne skripte
         run: |
           chmod +x test_radix.sh
 
+      # Tukaj se dejansko zazene testna skripta.
+      # Spremenljivka CXX_STANDARD pove, kateri C++ standard naj uporabi.
       - name: Zazeni testno skripto
         run: |
           export CXX_STANDARD=${{ matrix.cxx_standard }}

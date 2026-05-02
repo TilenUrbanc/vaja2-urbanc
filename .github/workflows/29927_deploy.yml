@@ -1,5 +1,8 @@
+# Ime drugega workflowa. Ta skrbi za Docker build in push na DockerHub.
 name: 29927_deploy
 
+# Ta workflow se zazene, ko se workflow 29927_test konca.
+# Rocni zagon je dodan zato, da ga lahko po potrebi pozenemo tudi sami.
 on:
   workflow_run:
     workflows:
@@ -10,24 +13,33 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Ta job naredi Docker sliko in jo poslje na DockerHub.
   docker_deploy:
     name: Docker build in push
     runs-on: self-hosted
 
+    # Deploy se izvede samo, ce je bil testni workflow uspesen.
+    # Pri rocnem zagonu pa dovolimo zagon tudi preko gumba Run workflow.
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      # Runner si najprej prenese trenutno kodo iz repozitorija.
       - name: Prevzemi kodo iz repozitorija
         uses: actions/checkout@v4
 
+      # Prijava v DockerHub.
+      # Gesla oziroma tokena nimamo direktno v kodi, ampak ga beremo iz GitHub Secrets.
       - name: Prijava v DockerHub
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      # Tukaj se naredi Docker slika.
+      # Ime slike je sestavljeno iz DockerHub uporabnika in imena repozitorija.
       - name: Zgradi Docker sliko
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.REPO_NAME }}:latest .
 
+      # Tukaj se Docker slika poslje na DockerHub.
       - name: Poslji Docker sliko na DockerHub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.REPO_NAME }}:latest
