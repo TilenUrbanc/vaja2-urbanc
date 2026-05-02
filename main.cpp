@@ -5,14 +5,15 @@
 using namespace std;
 
 vector<unsigned char> preberiPodatke(const char* pot) {
+    vector<unsigned char> A;
+
     ifstream in(pot);
-	
+
     if (!in) {
-    cout << "Napaka pri odpiranju datoteke\n";
-    return A;
+        cout << "Napaka pri odpiranju datoteke" << endl;
+        return A;
     }
 
-    vector<unsigned char> A;
     int temp;
 
     while (in >> temp) {
@@ -20,18 +21,20 @@ vector<unsigned char> preberiPodatke(const char* pot) {
     }
 
     in.close();
+
     return A;
 }
-
 
 void binarniRadixSort(vector<unsigned char>& A) {
     if (A.empty()) {
         return;
     }
+
     int n = A.size();
 
     vector<unsigned char> B(n);
     vector<int> D(n);
+
     int C[2];
 
     for (int k = 0; k < 8; k++) {
@@ -60,11 +63,10 @@ void binarniRadixSort(vector<unsigned char>& A) {
     }
 }
 
-
 int main(int argc, char* argv[]) {
 
     if (argc < 2) {
-        cout << "Napaka pri argumentih\n";
+        cout << "Napaka pri argumentih" << endl;
         return 1;
     }
 
@@ -74,12 +76,18 @@ int main(int argc, char* argv[]) {
 
     ofstream out("out.txt");
 
+    if (!out) {
+        cout << "Napaka pri ustvarjanju datoteke out.txt" << endl;
+        return 1;
+    }
+
     if (A.empty()) {
-        cout << "Ni podatkov za zapis\n";
+        cout << "Ni podatkov za zapis" << endl;
     }
 
     for (int i = 0; i < A.size(); i++) {
         out << (int)A[i];
+
         if (i != A.size() - 1) {
             out << " ";
         }
