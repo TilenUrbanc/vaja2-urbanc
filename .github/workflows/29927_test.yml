@@ -10,7 +10,7 @@ on:
 jobs:
   preveri_testne_skripte:
     name: Preveri testne skripte
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Prevzemi kodo iz repozitorija
@@ -46,7 +46,7 @@ jobs:
   zazeni_teste:
     name: Zazeni teste C++${{ matrix.cxx_standard }}
     needs: preveri_testne_skripte
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     strategy:
       matrix:
