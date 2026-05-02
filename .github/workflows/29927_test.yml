@@ -1,0 +1,88 @@
+
+name: 29927_test
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  preveri_testne_skripte:
+    name: Preveri testne skripte
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prevzemi kodo iz repozitorija
+        uses: actions/checkout@v4
+
+      - name: Preveri, ali testna skripta obstaja
+        run: |
+          {
+            if [ ! -f test_radix.sh ]; then
+              echo "Napaka: datoteka test_radix.sh ne obstaja." >&2
+            fi
+
+            if [ -f test_radix.sh ] && [ ! -s test_radix.sh ]; then
+              echo "Napaka: datoteka test_radix.sh obstaja, ampak je prazna." >&2
+            fi
+          } 2> napaka.txt
+
+      - name: Izpisi vsebino napaka.txt
+        run: |
+          if [ -s napaka.txt ]; then
+            echo "Najdene so bile napake:"
+            cat napaka.txt
+          else
+            echo "Datoteka napaka.txt je prazna. Prvi posel je uspesen."
+          fi
+
+      - name: Shrani napaka.txt kot artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: napaka-testne-skripte
+          path: napaka.txt
+
+  zazeni_teste:
+    name: Zazeni teste C++${{ matrix.cxx_standard }}
+    needs: preveri_testne_skripte
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        cxx_standard:
+          - 17
+          - 20
+
+    steps:
+      - name: Prevzemi kodo iz repozitorija
+        uses: actions/checkout@v4
+
+      - name: Prenesi napaka.txt iz prvega posla
+        uses: actions/download-artifact@v4
+        with:
+          name: napaka-testne-skripte
+          path: artefakt
+
+      - name: Preveri, ali je prvi posel nasel napako
+        run: |
+          if [ -s artefakt/napaka.txt ]; then
+            echo "Prvi posel je nasel napako:"
+            cat artefakt/napaka.txt
+            exit 1
+          fi
+
+          echo "Prvi posel ni nasel napak. Nadaljujem s testi."
+
+      - name: Preveri C++ prevajalnik
+        run: |
+          g++ --version
+
+      - name: Dovoli zagon testne skripte
+        run: |
+          chmod +x test_radix.sh
+
+      - name: Zazeni testno skripto
+        run: |
+          export CXX_STANDARD=${{ matrix.cxx_standard }}
+          ./test_radix.sh
